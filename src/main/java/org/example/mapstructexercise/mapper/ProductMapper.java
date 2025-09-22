@@ -12,19 +12,8 @@ import java.math.BigDecimal;
 public interface ProductMapper {
 
     // TODO: Map from ProductCreationForm to Product entity
-    // Hints:
-    // - productName -> name
-    // - priceInPounds needs converting to pence (multiply by 100)
-    // - shortDescription is ignored (we only store fullDescription)
-    // - supplierEmail -> supplier
-    // - stockQuantity -> stock
-    // - isActive -> active
-    // - imageUrl -> image
-    // - createdAt and updatedAt should be set to now()
-    // - id should be ignored (database generates it)
-
     @Mapping(target = "name", source = "productName")
-    @Mapping(target = "price", source = "priceInPounds", expression = "java(convertToPence(priceInPounds)")
+    @Mapping(target = "price", source = "java(convertToPence(priceInPounds)")
     // Not sure if I've done this mapping right, I guess I'll have to try.
     @Mapping(target = "supplier", source = "supplierEmail")
     @Mapping(target = "stock", source = "stockQuantity")
@@ -35,34 +24,22 @@ public interface ProductMapper {
     @Mapping(target = "id", ignore = true)
     Product formToEntity(ProductCreationForm form);
 
-
-
     // TODO: Map from Product entity to ProductDto for API response
-    // Hints:
-    // - id -> productId
-    // - name -> title
-    // - description -> summary (but truncate to 100 chars if longer)
-    // - price in pence -> formatted string like "£10.99"
-    // - stock > 0 -> inStock = true
-    // - category auto-maps
-    // - image -> imageUrl
-    // - availability should be "In Stock" or "Out of Stock" based on stock
-    // - updatedAt and createdAt are ignored
     @Mapping(target = "productId", source = "id")
     @Mapping(target = "title", source = "name")
-    @Mapping(target = "Summary", source = "description", expression = "java(truncated(description))")
+    @Mapping(target = "Summary", source = "java(truncated(description))" )
     // again I don't know if this even works
-    @Mapping(target = "price", expression = "")
+    @Mapping(target = "price", source = "java(formattedAsString(price))")
+    @Mapping(target = "inStock", source = "java(inStock(stock))")
+    @Mapping(target = "imageUrl", source = "image")
+    @Mapping(target = "availability", source = "java(availability(stock))")
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
     ProductDto entityToDto(Product product);
 
     // TODO: Helper methods (you can add these as default methods)
-    // - Convert pounds to pence
-    // - Format pence as price string
-    // - Truncate description
-    // - Determine availability text
-
-    default double convertToPence(double priceInPounds){
-        return priceInPounds * 100;
+    default BigDecimal convertToPence(double priceInPounds){
+        return BigDecimal.valueOf(priceInPounds * 100);
     }
     default String truncated(String description){
         String truncatedWord = "";
@@ -74,9 +51,18 @@ public interface ProductMapper {
     }
     default String formattedAsString(BigDecimal pence){
         String priceAsString = pence.toString();
-        for(int i = 0; i < priceAsString.length(); i++){
-
-        }
-        return priceAsString;
+        String firstPart = priceAsString.substring(0, priceAsString.length()-3);
+        String secondPart = priceAsString.substring(priceAsString.length()-3, priceAsString.length()-1);
+        return "£"+firstPart+"."+secondPart;
+        // There's probably SUCH a better way to do this lol, but this is the only way I can think of atm
     }
+    default boolean inStock(Integer stock){
+        return stock > 0;
+    }
+    default String availability(Integer stock){
+        if(inStock(stock)){
+            return "In Stock";
+        }
+        return "Out of Stock";
+    } // Is there a better way to do this one as well?
 }
