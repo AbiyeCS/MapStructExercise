@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 
-@SpringBootTest
+//@SpringBootTest
 public class ProductMapperTest {
     ProductMapper mapper = Mappers.getMapper(ProductMapper.class);
 
@@ -24,25 +24,33 @@ public class ProductMapperTest {
         @Test
         void shouldConvertToPence(){
             BigDecimal pounds = mapper.convertToPence(10.50);
-            assertThat(pounds).isEqualTo(1050);
+            assertThat(pounds).isEqualTo(BigDecimal.valueOf(1050.0));
         }
 
         @Test
         void shouldTruncateDescription(){
-            String Description = "1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111122222";
+            String Description = "111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111122222";
             String truncatedDescription = mapper.truncated(Description);
-            assertThat(truncatedDescription).isEqualTo("11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111");
+            String shortDescription = "Testing";
+            String shortTruncatedDescription = mapper.truncated(shortDescription);
+            assertThat(truncatedDescription).isEqualTo("1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111");
+            assertThat(shortTruncatedDescription).isEqualTo("Testing");
+
         }
 
         @Test
         void shouldFormatAsString(){
             BigDecimal pence = BigDecimal.valueOf(1099);
             String formattedAsString = mapper.formattedAsString(pence);
+
+            BigDecimal pence2 = BigDecimal.valueOf(50099);
+            String formattedAsString2 = mapper.formattedAsString(pence2);
             assertThat(formattedAsString).isEqualTo("£10.99");
+            assertThat(formattedAsString2).isEqualTo("£500.99");
         }
 
         @Test
-        void shouldShowAvailiablity(){
+        void shouldShowAvailability(){
             Integer inStock = 5;
             Integer OutOfStock = 0;
 
@@ -68,8 +76,8 @@ public class ProductMapperTest {
         @Test
         void testingMappingProductCreationFromToEntity(){
             assertThat(product.getName()).isEqualTo(productCreationForm.getProductName());
-            assertThat(product.getDescription()).isEqualTo(productCreationForm.getFullDescription().substring(0,100));
-            assertThat(product.getPrice()).isEqualTo(1999);
+            assertThat(product.getDescription()).isEqualTo(productCreationForm.getFullDescription());
+            assertThat(product.getPrice()).isEqualTo(1999); // No clue why this assertion is failing
             assertThat(product.getStock()).isEqualTo(productCreationForm.getStockQuantity());
             assertThat(product.getCategory()).isEqualTo(productCreationForm.getCategoryName());
             assertThat(product.getSupplier()).isEqualTo(productCreationForm.getSupplierEmail());
@@ -99,7 +107,7 @@ public class ProductMapperTest {
         void testingMappingEntityToDto() {
             assertThat(productDto.getProductId()).isEqualTo(product.getId());
             assertThat(productDto.getTitle()).isEqualTo(product.getName());
-            assertThat(productDto.getSummary()).isEqualTo(product.getDescription().substring(0, 100));
+            assertThat(productDto.getSummary()).isEqualTo(product.getDescription());
             assertThat(productDto.getPrice()).isEqualTo("£19.99");
             assertThat(productDto.isInStock()).isEqualTo(true);
             assertThat(productDto.getImageUrl()).isEqualTo(product.getImage());
